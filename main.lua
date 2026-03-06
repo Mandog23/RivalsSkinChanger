@@ -61,11 +61,12 @@ for weapon in pairs(SkinLists) do
     end
 end
 
-local CosmeticLibrary = require(ReplicatedStorage.Modules:WaitForChild("CosmeticLibrary"))
-local ItemLibrary = require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary"))
-local ReplicatedClass = require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass"))
-local ClientItem = require(player.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem)
-local ClientViewModel = require(player.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem.ClientViewModel)
+local rbx_require = getrenv and getrenv().require or require
+local CosmeticLibrary = rbx_require(ReplicatedStorage.Modules:WaitForChild("CosmeticLibrary"))
+local ItemLibrary = rbx_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary"))
+local ReplicatedClass = rbx_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass"))
+local ClientItem = rbx_require(player.PlayerScripts:WaitForChild("Modules"):WaitForChild("ClientReplicatedClasses"):WaitForChild("ClientFighter"):WaitForChild("ClientItem"))
+local ClientViewModel = rbx_require(player.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel"))
 
 local function getCosmeticData(name, cType)
     local base = CosmeticLibrary.Cosmetics[name]
