@@ -162,31 +162,21 @@ ClientViewModel.new = function(replicatedData, clientItem)
 end
 
 -- ═══════════════════════════════════════════════
--- AUTO-INJECT: re-apply skins each character spawn / new game
+-- AUTO-INJECT
+-- The ClientViewModel.new hook already reads _G.EquippedData every time a tool
+-- is equipped, so skins apply automatically on spawn without us needing to do
+-- anything extra. ApplyAllSkins is only used for the Load Config button.
 -- ═══════════════════════════════════════════════
 local function ApplyAllSkins()
-    -- Wait longer so the character, backpack tools, and viewmodels are all ready.
-    -- Going too fast risks the camera snapping or tools not existing yet.
-    task.wait(3)
     for weapon, info in pairs(_G.EquippedData) do
         if info.Skin ~= "Default" then
-            -- Only update the CosmeticLibrary state; the ClientViewModel.new hook
-            -- will pick up the new skin the next time the player equips the tool.
-            -- Do NOT touch .Parent or use FireServer here — both break viewmodels.
             pcall(function() CosmeticLibrary.Equip(weapon, "Skin", info.Skin) end)
         end
     end
-    print("[+] Aniha: Skins registered for " .. player.Name)
+    print("[+] Aniha: Skin state synced for " .. player.Name)
 end
 
--- Hook character spawns (covers queue respawns)
-local function ConnectCharacter(char)
-    char:WaitForChild("HumanoidRootPart", 10)
-    ApplyAllSkins()
-end
-
-if player.Character then ConnectCharacter(player.Character) end
-player.CharacterAdded:Connect(ConnectCharacter)
+-- No CharacterAdded hook needed — the ClientViewModel.new intercept handles it.
 
 -- ═══════════════════════════════════════════════
 -- GUI
@@ -194,14 +184,16 @@ player.CharacterAdded:Connect(ConnectCharacter)
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Name = "AnihaSkinChanger"
+-- Do NOT set IgnoreGuiInset=true or ZIndexBehavior that intercepts game input
 
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 950, 0, 660)
 Main.Position = UDim2.new(0.5, -475, 0.5, -330)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
+-- Active=false (default) so the frame does NOT sink game mouse input
+-- We implement dragging manually below so we don't need Draggable=true
+Main.Active = false
 
 -- Title bar
 local Title = Instance.new("TextLabel", Main)
@@ -482,12 +474,48 @@ WeaponSearch:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 -- ═══════════════════════════════════════════════
+-- MANUAL DRAG (replaces Draggable=true which can steal mouse lock)
+-- ═══════════════════════════════════════════════
+do
+    local dragging, dragStart, startPos
+    local TitleBar = Title -- drag via the title bar
+    TitleBar.Active = true  -- only the title bar is active/interactive
+
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+        end
+    end)
+    TitleBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- ═══════════════════════════════════════════════
 -- TOGGLE KEY  [K]
 -- ═══════════════════════════════════════════════
 UserInputService.InputBegan:Connect(function(i, g)
     if not g and i.KeyCode == Enum.KeyCode.K then
         Main.Visible = not Main.Visible
+        if not Main.Visible then
+            -- Release TextBox focus so it doesn't keep capturing mouse input
+            -- even though the menu is hidden
+            WeaponSearch:ReleaseFocus()
+        end
     end
 end)
 
-print("[+] Aniha Skin Changer loaded. Press K to toggle. Skins auto-apply each spawn.")
+print("[+] Aniha Skin Changer loaded. Press K to toggle. Drag via title bar.")
