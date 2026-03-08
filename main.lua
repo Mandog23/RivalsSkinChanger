@@ -1,3 +1,4 @@
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -164,18 +165,18 @@ end
 -- AUTO-INJECT: re-apply skins each character spawn / new game
 -- ═══════════════════════════════════════════════
 local function ApplyAllSkins()
-    task.wait(1.5) -- let the character + tools load in first
+    -- Wait longer so the character, backpack tools, and viewmodels are all ready.
+    -- Going too fast risks the camera snapping or tools not existing yet.
+    task.wait(3)
     for weapon, info in pairs(_G.EquippedData) do
         if info.Skin ~= "Default" then
+            -- Only update the CosmeticLibrary state; the ClientViewModel.new hook
+            -- will pick up the new skin the next time the player equips the tool.
+            -- Do NOT touch .Parent or use FireServer here — both break viewmodels.
             pcall(function() CosmeticLibrary.Equip(weapon, "Skin", info.Skin) end)
-            pcall(function()
-                local rem = ReplicatedStorage:FindFirstChild("EquipCosmetic", true)
-                    or (ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("EquipCosmetic"))
-                if rem then rem:FireServer(weapon, info.Skin) end
-            end)
         end
     end
-    print("[+] Aniha: Skins auto-applied")
+    print("[+] Aniha: Skins registered for " .. player.Name)
 end
 
 -- Hook character spawns (covers queue respawns)
@@ -369,24 +370,9 @@ end
 -- ═══════════════════════════════════════════════
 local function EquipSkin(weapon, skin)
     _G.EquippedData[weapon].Skin = skin
+    -- Update the cosmetic library state so next time the tool spawns it picks up the skin.
+    -- We do NOT re-parent the tool here — that causes camera lock + vanishing weapons.
     pcall(function() CosmeticLibrary.Equip(weapon, "Skin", skin) end)
-    pcall(function()
-        local rem = ReplicatedStorage:FindFirstChild("EquipCosmetic", true)
-            or (ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("EquipCosmetic"))
-        if rem then rem:FireServer(weapon, skin) end
-    end)
-    pcall(function()
-        local char = player.Character
-        if char then
-            local tool = char:FindFirstChild(weapon)
-            if tool then
-                local oldParent = tool.Parent
-                tool.Parent = nil
-                task.wait()
-                tool.Parent = oldParent
-            end
-        end
-    end)
     SelectedLabel.Text = "✅ EQUIPPED: " .. weapon .. " — " .. skin
 end
 
