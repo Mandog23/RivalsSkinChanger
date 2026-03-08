@@ -1,10 +1,11 @@
-
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
+-- ═══════════════════════════════════════════════
+-- SKIN LISTS
+-- ═══════════════════════════════════════════════
 local SkinLists = {
     ["Assault Rifle"] = {"Default", "AK-47", "AUG", "Tommy Gun", "Boneclaw Rifle", "Gingerbread AUG", "AKEY-47", "100K Visits"},
     ["Bow"] = {"Default", "Compound Bow", "Raven Bow", "Dream Bow", "Bat Bow", "Frostbite Bow", "Beloved Bow", "Balloon Bow", "Glorious Bow", "Key Bow"},
@@ -53,6 +54,45 @@ local SkinLists = {
     ["Permafrost"] = {"Default", "Snowman Permafrost", "Ice Permafrost", "Glorious Permafrost"},
 }
 
+-- ═══════════════════════════════════════════════
+-- SAVE / LOAD CONFIG
+-- ═══════════════════════════════════════════════
+local SAVE_FILE = "AnihaSkinConfig.json"
+
+local function SaveConfig()
+    local success, err = pcall(function()
+        local data = {}
+        for weapon, info in pairs(_G.EquippedData) do
+            data[weapon] = {Skin = info.Skin or "Default", Wrap = info.Wrap or "None"}
+        end
+        writefile(SAVE_FILE, game:GetService("HttpService"):JSONEncode(data))
+    end)
+    return success
+end
+
+local function LoadConfig()
+    local success, result = pcall(function()
+        if isfile(SAVE_FILE) then
+            local raw = readfile(SAVE_FILE)
+            return game:GetService("HttpService"):JSONDecode(raw)
+        end
+        return nil
+    end)
+    if success and result then
+        for weapon, info in pairs(result) do
+            if _G.EquippedData[weapon] then
+                _G.EquippedData[weapon].Skin = info.Skin or "Default"
+                _G.EquippedData[weapon].Wrap = info.Wrap or "None"
+            end
+        end
+        return true
+    end
+    return false
+end
+
+-- ═══════════════════════════════════════════════
+-- GLOBAL STATE
+-- ═══════════════════════════════════════════════
 _G.ActiveSelection = nil
 _G.EquippedData = _G.EquippedData or {}
 for weapon in pairs(SkinLists) do
@@ -61,12 +101,20 @@ for weapon in pairs(SkinLists) do
     end
 end
 
-local rbx_require = getrenv and getrenv().require or require
-local CosmeticLibrary = rbx_require(ReplicatedStorage.Modules:WaitForChild("CosmeticLibrary"))
-local ItemLibrary = rbx_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary"))
-local ReplicatedClass = rbx_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass"))
-local ClientItem = rbx_require(player.PlayerScripts:WaitForChild("Modules"):WaitForChild("ClientReplicatedClasses"):WaitForChild("ClientFighter"):WaitForChild("ClientItem"))
-local ClientViewModel = rbx_require(player.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel"))
+-- Load saved config on startup
+LoadConfig()
+print("[+] Initializing Aniha Skin Changer...")
+
+-- ═══════════════════════════════════════════════
+-- COSMETIC HOOKS
+-- ═══════════════════════════════════════════════
+local CosmeticLibrary = require(ReplicatedStorage:WaitForChild("Modules", 5):WaitForChild("CosmeticLibrary", 5))
+local ItemLibrary = require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 5))
+local ReplicatedClass = require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 5))
+
+local Modules = player.PlayerScripts:WaitForChild("Modules", 5)
+local ClientItem = require(Modules:WaitForChild("ClientReplicatedClasses", 5):WaitForChild("ClientFighter", 5):WaitForChild("ClientItem", 5))
+local ClientViewModel = require(Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel", 5))
 
 local function getCosmeticData(name, cType)
     local base = CosmeticLibrary.Cosmetics[name]
@@ -112,52 +160,93 @@ ClientViewModel.new = function(replicatedData, clientItem)
     return vm
 end
 
+-- ═══════════════════════════════════════════════
+-- AUTO-INJECT: re-apply skins each character spawn / new game
+-- ═══════════════════════════════════════════════
+local function ApplyAllSkins()
+    task.wait(1.5) -- let the character + tools load in first
+    for weapon, info in pairs(_G.EquippedData) do
+        if info.Skin ~= "Default" then
+            pcall(function() CosmeticLibrary.Equip(weapon, "Skin", info.Skin) end)
+            pcall(function()
+                local rem = ReplicatedStorage:FindFirstChild("EquipCosmetic", true)
+                    or (ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("EquipCosmetic"))
+                if rem then rem:FireServer(weapon, info.Skin) end
+            end)
+        end
+    end
+    print("[+] Aniha: Skins auto-applied")
+end
+
+-- Hook character spawns (covers queue respawns)
+local function ConnectCharacter(char)
+    char:WaitForChild("HumanoidRootPart", 10)
+    ApplyAllSkins()
+end
+
+if player.Character then ConnectCharacter(player.Character) end
+player.CharacterAdded:Connect(ConnectCharacter)
+
+-- ═══════════════════════════════════════════════
+-- GUI
+-- ═══════════════════════════════════════════════
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "AnihaSkinChanger"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 950, 0, 620)
-Main.Position = UDim2.new(0.5, -475, 0.5, -310)
+Main.Size = UDim2.new(0, 950, 0, 660)
+Main.Position = UDim2.new(0.5, -475, 0.5, -330)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
 
+-- Title bar
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-Title.Text = "Aniha Skin Changer"
+Title.Text = "Aniha Skin Changer  •  [ K ] Toggle"
 Title.TextColor3 = Color3.fromRGB(255, 80, 80)
 Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 26
+Title.TextSize = 22
+Title.BorderSizePixel = 0
 
+-- Weapon panel (left)
 local Left = Instance.new("Frame", Main)
-Left.Size = UDim2.new(0, 280, 1, -70)
+Left.Size = UDim2.new(0, 280, 1, -110)
 Left.Position = UDim2.new(0, 15, 0, 60)
 Left.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+Left.BorderSizePixel = 0
 
 local WeaponSearch = Instance.new("TextBox", Left)
 WeaponSearch.Size = UDim2.new(1, -20, 0, 35)
 WeaponSearch.Position = UDim2.new(0, 10, 0, 10)
 WeaponSearch.PlaceholderText = "Search weapon..."
 WeaponSearch.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-WeaponSearch.TextColor3 = Color3.new(1,1,1)
+WeaponSearch.TextColor3 = Color3.new(1, 1, 1)
 WeaponSearch.Font = Enum.Font.Gotham
+WeaponSearch.TextSize = 14
+WeaponSearch.BorderSizePixel = 0
+WeaponSearch.ClearTextOnFocus = false
 
 local WeaponScroll = Instance.new("ScrollingFrame", Left)
 WeaponScroll.Size = UDim2.new(1, -20, 1, -55)
 WeaponScroll.Position = UDim2.new(0, 10, 0, 55)
 WeaponScroll.BackgroundTransparency = 1
 WeaponScroll.ScrollBarThickness = 6
+WeaponScroll.BorderSizePixel = 0
 
 local WeaponLayout = Instance.new("UIListLayout", WeaponScroll)
 WeaponLayout.Padding = UDim.new(0, 6)
 WeaponLayout.SortOrder = Enum.SortOrder.Name
 
+-- Skin panel (right)
 local Right = Instance.new("Frame", Main)
-Right.Size = UDim2.new(1, -310, 1, -70)
+Right.Size = UDim2.new(1, -310, 1, -110)
 Right.Position = UDim2.new(0, 305, 0, 60)
 Right.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+Right.BorderSizePixel = 0
 
 local SelectedLabel = Instance.new("TextLabel", Right)
 SelectedLabel.Size = UDim2.new(1, -20, 0, 40)
@@ -173,11 +262,79 @@ SkinScroll.Size = UDim2.new(1, -20, 1, -70)
 SkinScroll.Position = UDim2.new(0, 10, 0, 60)
 SkinScroll.BackgroundTransparency = 1
 SkinScroll.ScrollBarThickness = 8
+SkinScroll.BorderSizePixel = 0
 
 local SkinGrid = Instance.new("UIGridLayout", SkinScroll)
 SkinGrid.CellSize = UDim2.new(0, 130, 0, 155)
 SkinGrid.CellPadding = UDim2.new(0, 15, 0, 15)
 
+-- ═══════════════════════════════════════════════
+-- BOTTOM TOOLBAR (Save / Load / Status)
+-- ═══════════════════════════════════════════════
+local Toolbar = Instance.new("Frame", Main)
+Toolbar.Size = UDim2.new(1, 0, 0, 48)
+Toolbar.Position = UDim2.new(0, 0, 1, -48)
+Toolbar.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
+Toolbar.BorderSizePixel = 0
+
+local StatusLabel = Instance.new("TextLabel", Toolbar)
+StatusLabel.Size = UDim2.new(1, -310, 1, 0)
+StatusLabel.Position = UDim2.new(0, 15, 0, 0)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Ready  •  Config: AnihaSkinConfig.json"
+StatusLabel.TextColor3 = Color3.fromRGB(140, 140, 160)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 13
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local function MakeToolbarBtn(text, xPos, color)
+    local btn = Instance.new("TextButton", Toolbar)
+    btn.Size = UDim2.new(0, 140, 0, 32)
+    btn.Position = UDim2.new(1, xPos, 0.5, -16)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.BorderSizePixel = 0
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+local SaveBtn = MakeToolbarBtn("💾  Save Config", -300, Color3.fromRGB(50, 130, 50))
+local LoadBtn = MakeToolbarBtn("📂  Load Config", -150, Color3.fromRGB(60, 100, 180))
+
+local function FlashStatus(msg, color)
+    StatusLabel.Text = msg
+    StatusLabel.TextColor3 = color or Color3.fromRGB(140, 200, 140)
+    task.delay(3, function()
+        StatusLabel.Text = "Ready  •  Config: AnihaSkinConfig.json"
+        StatusLabel.TextColor3 = Color3.fromRGB(140, 140, 160)
+    end)
+end
+
+SaveBtn.MouseButton1Click:Connect(function()
+    if SaveConfig() then
+        FlashStatus("✅ Config saved to AnihaSkinConfig.json!", Color3.fromRGB(100, 220, 100))
+    else
+        FlashStatus("❌ Save failed (writefile not available)", Color3.fromRGB(220, 80, 80))
+    end
+end)
+
+LoadBtn.MouseButton1Click:Connect(function()
+    if LoadConfig() then
+        FlashStatus("✅ Config loaded! Skins will apply next spawn.", Color3.fromRGB(100, 180, 255))
+        -- Immediately re-apply to current character
+        ApplyAllSkins()
+    else
+        FlashStatus("❌ No config file found or load failed.", Color3.fromRGB(220, 80, 80))
+    end
+end)
+
+-- ═══════════════════════════════════════════════
+-- THUMBNAIL HELPER
+-- ═══════════════════════════════════════════════
 local function GetThumb(name)
     if ItemLibrary.ViewModels and ItemLibrary.ViewModels[name] then
         local data = ItemLibrary.ViewModels[name]
@@ -207,11 +364,15 @@ local function GetThumb(name)
     return ""
 end
 
+-- ═══════════════════════════════════════════════
+-- EQUIP SKIN
+-- ═══════════════════════════════════════════════
 local function EquipSkin(weapon, skin)
     _G.EquippedData[weapon].Skin = skin
     pcall(function() CosmeticLibrary.Equip(weapon, "Skin", skin) end)
     pcall(function()
-        local rem = ReplicatedStorage:FindFirstChild("EquipCosmetic", true) or ReplicatedStorage.Remotes:FindFirstChild("EquipCosmetic")
+        local rem = ReplicatedStorage:FindFirstChild("EquipCosmetic", true)
+            or (ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("EquipCosmetic"))
         if rem then rem:FireServer(weapon, skin) end
     end)
     pcall(function()
@@ -226,60 +387,103 @@ local function EquipSkin(weapon, skin)
             end
         end
     end)
-    SelectedLabel.Text = "EQUIPPED: " .. weapon .. " - " .. skin
+    SelectedLabel.Text = "✅ EQUIPPED: " .. weapon .. " — " .. skin
 end
 
+-- ═══════════════════════════════════════════════
+-- WEAPON BUTTONS
+-- ═══════════════════════════════════════════════
 local function MakeWeaponBtn(weapon)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 52)
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
     btn.Text = "   " .. weapon
-    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextColor3 = Color3.new(1, 1, 1)
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.Font = Enum.Font.GothamSemibold
     btn.TextSize = 16
+    btn.BorderSizePixel = 0
     btn.Parent = WeaponScroll
+
     local img = Instance.new("ImageLabel", btn)
     img.Size = UDim2.new(0, 40, 0, 40)
     img.Position = UDim2.new(1, -50, 0.5, -20)
     img.BackgroundTransparency = 1
     img.Image = GetThumb(weapon)
+
+    -- Active skin badge
+    local badge = Instance.new("TextLabel", btn)
+    badge.Size = UDim2.new(0, 60, 0, 18)
+    badge.Position = UDim2.new(1, -120, 0, 4)
+    badge.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+    badge.TextColor3 = Color3.new(1, 1, 1)
+    badge.Font = Enum.Font.GothamBold
+    badge.TextSize = 10
+    badge.BorderSizePixel = 0
+    badge.TextScaled = true
+    local badgeCorner = Instance.new("UICorner", badge)
+    badgeCorner.CornerRadius = UDim.new(0, 4)
+    local function UpdateBadge()
+        local skin = _G.EquippedData[weapon] and _G.EquippedData[weapon].Skin or "Default"
+        if skin ~= "Default" then
+            badge.Text = skin:sub(1, 8)
+            badge.Visible = true
+        else
+            badge.Visible = false
+        end
+    end
+    UpdateBadge()
+
     btn.MouseButton1Click:Connect(function()
         for _, b in pairs(WeaponScroll:GetChildren()) do
-            if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(40,40,48) end
+            if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(40, 40, 48) end
         end
         btn.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
         for _, child in pairs(SkinScroll:GetChildren()) do
             if child:IsA("ImageButton") then child:Destroy() end
         end
-        SelectedLabel.Text = weapon .. " Skins"
+        SelectedLabel.Text = weapon .. " — Choose a Skin"
         for _, skin in ipairs(SkinLists[weapon]) do
             local sbtn = Instance.new("ImageButton")
-            sbtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            sbtn.BackgroundColor3 =
+                (_G.EquippedData[weapon] and _G.EquippedData[weapon].Skin == skin)
+                and Color3.fromRGB(60, 130, 60)
+                or Color3.fromRGB(35, 35, 42)
             sbtn.Image = GetThumb(skin)
+            sbtn.BorderSizePixel = 0
             sbtn.Parent = SkinScroll
             local lbl = Instance.new("TextLabel", sbtn)
-            lbl.Size = UDim2.new(1,0,0,35)
-            lbl.Position = UDim2.new(0,0,1,-35)
+            lbl.Size = UDim2.new(1, 0, 0, 35)
+            lbl.Position = UDim2.new(0, 0, 1, -35)
             lbl.BackgroundTransparency = 0.3
-            lbl.BackgroundColor3 = Color3.new(0,0,0)
+            lbl.BackgroundColor3 = Color3.new(0, 0, 0)
             lbl.Text = skin
-            lbl.TextColor3 = Color3.new(1,1,1)
+            lbl.TextColor3 = Color3.new(1, 1, 1)
             lbl.Font = Enum.Font.Gotham
             lbl.TextScaled = true
+            lbl.BorderSizePixel = 0
             sbtn.MouseButton1Click:Connect(function()
+                -- deselect all cards
+                for _, c in pairs(SkinScroll:GetChildren()) do
+                    if c:IsA("ImageButton") then c.BackgroundColor3 = Color3.fromRGB(35, 35, 42) end
+                end
+                sbtn.BackgroundColor3 = Color3.fromRGB(60, 130, 60)
                 EquipSkin(weapon, skin)
+                UpdateBadge()
             end)
         end
-        SkinScroll.CanvasSize = UDim2.new(0,0,0, SkinGrid.AbsoluteContentSize.Y + 40)
+        SkinScroll.CanvasSize = UDim2.new(0, 0, 0, SkinGrid.AbsoluteContentSize.Y + 40)
     end)
 end
 
 for weapon in pairs(SkinLists) do
     MakeWeaponBtn(weapon)
 end
-WeaponScroll.CanvasSize = UDim2.new(0,0,0, WeaponLayout.AbsoluteContentSize.Y)
+WeaponScroll.CanvasSize = UDim2.new(0, 0, 0, WeaponLayout.AbsoluteContentSize.Y)
 
+-- ═══════════════════════════════════════════════
+-- SEARCH
+-- ═══════════════════════════════════════════════
 WeaponSearch:GetPropertyChangedSignal("Text"):Connect(function()
     local txt = WeaponSearch.Text:lower()
     for _, btn in pairs(WeaponScroll:GetChildren()) do
@@ -288,8 +492,16 @@ WeaponSearch:GetPropertyChangedSignal("Text"):Connect(function()
             btn.Visible = txt == "" or btnText:find(txt)
         end
     end
+    WeaponScroll.CanvasSize = UDim2.new(0, 0, 0, WeaponLayout.AbsoluteContentSize.Y)
 end)
 
+-- ═══════════════════════════════════════════════
+-- TOGGLE KEY  [K]
+-- ═══════════════════════════════════════════════
 UserInputService.InputBegan:Connect(function(i, g)
-    if not g and i.KeyCode == Enum.KeyCode.K then Main.Visible = not Main.Visible end
+    if not g and i.KeyCode == Enum.KeyCode.K then
+        Main.Visible = not Main.Visible
+    end
 end)
+
+print("[+] Aniha Skin Changer loaded. Press K to toggle. Skins auto-apply each spawn.")
