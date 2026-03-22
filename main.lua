@@ -199,67 +199,6 @@ local function robust_require(module)
     warn("[!] Skin Changer: All retrieval methods failed for " .. mName .. ". Your executor may be too restricted.")
     return nil
 end
-    local mName = tostring(module)
-    local setidentity = setthreadidentity or set_thread_identity or (syn and syn.set_thread_identity) or (fluxus and fluxus.set_thread_identity) or (getgenv and getgenv().set_thread_identity)
-    local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.get_thread_identity) or (getgenv and getgenv().get_thread_identity)
-    
-    -- Tier 1: Global Table Check (shared/_G)
-    if shared[mName] or _G[mName] then return (shared[mName] or _G[mName]) end
-    if getrenv and (getrenv()._G[mName] or getrenv().shared[mName]) then return (getrenv()._G[mName] or getrenv().shared[mName]) end
-
-    -- Tier 2: Identity Bypass Require
-    local old_identity
-    pcall(function() if getidentity and setidentity then old_identity = getidentity() setidentity(2) end end)
-    local success, result = pcall(require, module)
-    if not success and getgenv and getgenv().require then
-        local ok, res = pcall(getgenv().require, module)
-        if ok then success, result = true, res end
-    end
-    pcall(function() if setidentity and old_identity then setidentity(old_identity) end end)
-    if success then return result end
-
-    -- Tier 3: Memory Signature Scan (getgc / getreg)
-    local getupvalues = debug.getupvalues or getupvalues
-    local scan_apis = {getgc, getregistry, debug.getregistry}
-    for _, api in pairs(scan_apis) do
-        if type(api) == "function" then
-            local ok, objects = pcall(api, true)
-            if ok and type(objects) == "table" then
-                for _, v in pairs(objects) do
-                    if type(v) == "table" then
-                        -- Broad heuristic signature matching
-                        if mName:find("CosmeticLibrary") and (v.Cosmetics or rawget(v, "Cosmetics")) and (type(v.Equip) == "function" or type(v.GetSkins) == "function") then
-                            print("[*] Aniha: Located CosmeticLibrary via Scan.")
-                            return v
-                        elseif mName:find("ItemLibrary") and (v.ViewModels or rawget(v, "ViewModels")) then
-                            print("[*] Aniha: Located ItemLibrary via Scan.")
-                            return v
-                        elseif mName:find("ClientViewModel") and (v.new or rawget(v, "new")) and (v.GetWrap or rawget(v, "GetWrap")) then
-                            print("[*] Aniha: Located ClientViewModel via Scan.")
-                            return v
-                        elseif mName:find("ReplicatedClass") and type(v.ToEnum) == "function" then
-                            print("[*] Aniha: Located ReplicatedClass via Scan.")
-                            return v
-                        end
-                    elseif type(v) == "function" and getupvalues then
-                        -- UPVALUE SCAN: Search within game functions to find their libraries
-                        local ups = getupvalues(v)
-                        for _, upv in pairs(ups) do
-                            if type(upv) == "table" then
-                                if mName:find("CosmeticLibrary") and upv.Cosmetics and upv.Equip then return upv end
-                                if mName:find("ItemLibrary") and upv.ViewModels then return upv end
-                                if mName:find("ClientViewModel") and upv.new and upv.GetWrap then return upv end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    warn("[!] Skin Changer: All retrieval methods failed for " .. mName .. ". Confirm you have injected properly.")
-    return nil
-end
 
 
 task.spawn(function()
