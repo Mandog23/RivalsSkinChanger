@@ -8,8 +8,8 @@ local player = Players.LocalPlayer
 -- SKIN LISTS
 -- ═══════════════════════════════════════════════
 local SkinLists = {
-    ["Assault Rifle"] = {"Default", "AK-47", "AUG", "Tommy Gun", "Boneclaw Rifle", "Gingerbread AUG", "AKEY-47", "100K Visits"},
-    ["Bow"] = {"Default", "Compound Bow", "Raven Bow", "Dream Bow", "Bat Bow", "Frostbite Bow", "Beloved Bow", "Balloon Bow", "Glorious Bow", "Key Bow"},
+    ["Assault Rifle"] = {"Default", "AK-47", "AUG", "Tommy Gun", "Boneclaw Rifle", "Gingerbread AUG", "AKEY-47", "100K Visits", "10 Billion Visits", "Phoenix Rifle"},
+    ["Bow"] = {"Default", "Compound Bow", "Raven Bow", "Dream Bow", "Bat Bow", "Frostbite Bow", "Beloved Bow", "Balloon Bow", "Glorious Bow", "Key Bow", "Arch Bow"},
     ["Burst Rifle"] = {"Default", "Electro Burst", "Aqua Burst", "FAMAS", "Spectral Burst", "Pine Burst"},
     ["Crossbow"] = {"Default", "Pixel Crossbow", "Harpoon Crossbow", "Violin Crossbow", "Crossbone", "Frostbite Crossbow", "Arch Crossbow", "Glorious Crossbow"},
     ["Distortion"] = {"Default", "Plasma Distortion", "Magma Distortion", "Cyber Distortion", "Expirement D15", "Sleighstortion"},
@@ -36,10 +36,10 @@ local SkinLists = {
     ["Battle Axe"] = {"Default", "The Shred", "Ban Axe", "Cerulean Axe", "Mimic Axe", "Nordic Axe"},
     ["Chainsaw"] = {"Default", "Blobsaw", "Handsaws", "Mega Drill", "Buzzsaw", "Festive Buzzsaw"},
     ["Fists"] = {"Default", "Boxing Gloves", "Brass Knuckles", "Fists Of Hurt", "Pumpkin Claws", "Festive Fists"},
-    ["Katana"] = {"Default", "Saber", "Lightning Bolt", "Stellar Katana", "Devil's Trident", "New Years Katana", "Keytana", "Arch Katana", "Crystal Katana", "Pixel Katana", "Glorious Katana"},
+    ["Katana"] = {"Default", "Saber", "Lightning Bolt", "Stellar Katana", "Evil Trident", "New Years Katana", "Keytana", "Arch Katana", "Crystal Katana", "Pixel Katana", "Glorious Katana"},
     ["Knife"] = {"Default", "Chancla", "Karambit", "Balisong", "Machete", "Candy Cane", "Keylisong", "Keyrambit", "Caladbolg"},
     ["Riot Shield"] = {"Default", "Door", "Energy Shield", "Masterpiece", "Tombstone Shield", "Sled"},
-    ["Scythe"] = {"Default", "Scythe of Death", "Anchor", "Sakura Scythe", "Bat Scythe", "Cryo Scythe", "Crystal Scythe", "Keythe", "Bug Net"},
+    ["Scythe"] = {"Default", "Scythe of Death", "Anchor", "Sakura Scythe", "Bat Scythe", "Cryo Scythe", "Crystal Scythe", "Keythe", "Bug Net", "Arch Scythe"},
     ["Trowel"] = {"Default", "Plastic Shovel", "Garden Shovel", "Paintbrush", "Pumpkin Carver", "Snow Shovel"},
     ["Flashbang"] = {"Default", "Disco Ball", "Camera", "Lightbulb", "Skullbang", "Shining Star"},
     ["Freeze Ray"] = {"Default", "Temporal Ray", "Bubble Ray", "Gum Ray", "Spider Ray", "Wrapped Freeze Ray"},
@@ -53,6 +53,18 @@ local SkinLists = {
     ["War Horn"] = {"Default", "Trumpet", "Megaphone", "Air Horn", "Boneclaw Horn", "Mammoth Horn"},
     ["Warpstone"] = {"Default", "Cyber Warpstone", "Teleport Disc", "Electropunk Warpstone", "Warpbone", "Warpstar"},
     ["Permafrost"] = {"Default", "Snowman Permafrost", "Ice Permafrost", "Glorious Permafrost"},
+}
+
+local WrapList = {
+    "None", "Gold", "Diamond", "Midas Touch", "Community Wrap", "Blush Wrapping", "Brain", "Crystalliz", 
+    "Damascus", "Black Damascus", ".exe wrap", "Groove", "Hollow Wrap", "Hesper", "Hyperdrive", 
+    "Gingerbread", "Neon Lights", "Hologram Arena", "Sunset", "Pink Lemonade", "Lovely Leopard", 
+    "Dawn", "Spectral", "Danger", "Termination", "Moonstone", "Starfall", "Black Glass", 
+    "Rift Wrap", "Starblaze", "Maganite", "Watermelon", "Reptile", "Water", "OranGG", "A5", "Cheese", 
+    "Nova", "Supernova", "Glass", "Mesh", "Meat Wrap", "Black Dark Wrap", "Cardinal", "Pixel Camo", 
+    "Nauseite", "Sensite", "Urban Camo", "Frosted", "Slime Wrap", "Carpet Wrap", "Cross Wrap", 
+    "Mainframe Wrap", "Honeycomb Wrap", "Black Opal Wrap", "Patriot", "PB&J Wrap", "Digital Camo", 
+    "Street Camo", "Ocean Camo", "Circuit", "Clouds", "Woven", "Ladybug"
 }
 
 -- ═══════════════════════════════════════════════
@@ -95,6 +107,8 @@ end
 -- GLOBAL STATE
 -- ═══════════════════════════════════════════════
 _G.ActiveSelection = nil
+_G.ActiveTab = "Skins" -- Default tab
+_G.Telemetry = {} -- For diagnostics
 _G.EquippedData = _G.EquippedData or {}
 for weapon in pairs(SkinLists) do
     if not _G.EquippedData[weapon] then
@@ -104,9 +118,8 @@ end
 
 -- Load saved config on startup
 LoadConfig()
-print("[+] Initializing Aniha Skin Changer v2.1 (MEMORY SCAN Edition)...")
-_G.AnihaVersion = "2.1-GC"
-
+print("[+] Initializing Aniha Skin Changer v2.2 (HEURISTIC SCAN Edition)...")
+_G.AnihaVersion = "2.2-GC"
 
 -- ═══════════════════════════════════════════════
 -- COSMETIC HOOKS & ROBUST INITIALIZATION
@@ -117,34 +130,22 @@ local function robust_require(module)
     local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.get_thread_identity) or (getgenv and getgenv().get_thread_identity)
     
     -- Tier 1: Global Table Check (shared/_G)
-    if shared[mName] then return shared[mName] end
-    if _G[mName] then return _G[mName] end
-    if getrenv and getrenv()._G[mName] then return getrenv()._G[mName] end
+    if shared[mName] or _G[mName] then return (shared[mName] or _G[mName]) end
+    if getrenv and (getrenv()._G[mName] or getrenv().shared[mName]) then return (getrenv()._G[mName] or getrenv().shared[mName]) end
 
     -- Tier 2: Identity Bypass Require
     local old_identity
-    pcall(function()
-        if getidentity and setidentity then
-            old_identity = getidentity()
-            setidentity(2)
-        end
-    end)
-    
+    pcall(function() if getidentity and setidentity then old_identity = getidentity() setidentity(2) end end)
     local success, result = pcall(require, module)
-    
     if not success and getgenv and getgenv().require then
         local ok, res = pcall(getgenv().require, module)
         if ok then success, result = true, res end
     end
-
-    pcall(function()
-        if setidentity and old_identity then setidentity(old_identity) end
-    end)
-    
+    pcall(function() if setidentity and old_identity then setidentity(old_identity) end end)
     if success then return result end
 
-    -- Tier 3: Global Garbage Collection Scan (Nuclear Option)
-    -- If require is blocked, we find the table already loaded in the game's memory.
+    -- Tier 3: Memory Signature Scan (getgc / getreg)
+    local getupvalues = debug.getupvalues or getupvalues
     local scan_apis = {getgc, getregistry, debug.getregistry}
     for _, api in pairs(scan_apis) do
         if type(api) == "function" then
@@ -152,47 +153,55 @@ local function robust_require(module)
             if ok and type(objects) == "table" then
                 for _, v in pairs(objects) do
                     if type(v) == "table" then
-                        if mName:find("CosmeticLibrary") and rawget(v, "Cosmetics") and rawget(v, "Equip") then
-                            print("[*] Aniha: Located " .. mName .. " via Scan (Signature: Cosmetics/Equip)")
+                        -- Broad heuristic signature matching
+                        if mName:find("CosmeticLibrary") and (v.Cosmetics or rawget(v, "Cosmetics")) and (type(v.Equip) == "function" or type(v.GetSkins) == "function") then
+                            print("[*] Aniha: Located CosmeticLibrary via Scan.")
                             return v
-                        elseif mName:find("ItemLibrary") and rawget(v, "ViewModels") then
-                            print("[*] Aniha: Located " .. mName .. " via Scan (Signature: ViewModels)")
+                        elseif mName:find("ItemLibrary") and (v.ViewModels or rawget(v, "ViewModels")) then
+                            print("[*] Aniha: Located ItemLibrary via Scan.")
                             return v
-                        elseif mName:find("ClientViewModel") and rawget(v, "new") and rawget(v, "GetWrap") then
-                            print("[*] Aniha: Located " .. mName .. " via Scan (Signature: new/GetWrap)")
+                        elseif mName:find("ClientViewModel") and (v.new or rawget(v, "new")) and (v.GetWrap or rawget(v, "GetWrap")) then
+                            print("[*] Aniha: Located ClientViewModel via Scan.")
+                            return v
+                        elseif mName:find("ReplicatedClass") and type(v.ToEnum) == "function" then
+                            print("[*] Aniha: Located ReplicatedClass via Scan.")
                             return v
                         end
+                    elseif type(v) == "function" and getupvalues then
+                        -- UPVALUE SCAN: Search within game functions to find their libraries
+                        local ups = getupvalues(v)
+                        for _, upv in pairs(ups) do
+                            if type(upv) == "table" then
+                                if mName:find("CosmeticLibrary") and upv.Cosmetics and upv.Equip then return upv end
+                                if mName:find("ItemLibrary") and upv.ViewModels then return upv end
+                                if mName:find("ClientViewModel") and upv.new and upv.GetWrap then return upv end
+                            end
+                        end
                     end
-
                 end
             end
         end
     end
 
-    warn("[!] Skin Changer: All retrieval methods failed for " .. mName)
+    warn("[!] Skin Changer: All retrieval methods failed for " .. mName .. ". Confirm you have injected properly.")
     return nil
 end
 
 
-
-
 task.spawn(function()
-    task.wait(1) -- Give executor a moment to initialize hooks
-    CosmeticLibrary = robust_require(ReplicatedStorage:WaitForChild("Modules", 15):WaitForChild("CosmeticLibrary", 15))
-    ItemLibrary = robust_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 15))
-    ReplicatedClass = robust_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 15))
+    task.wait(1.5) -- Give executor longer to initialize hooks
+    CosmeticLibrary = robust_require(ReplicatedStorage:WaitForChild("Modules", 20):WaitForChild("CosmeticLibrary", 20))
+    ItemLibrary = robust_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 20))
+    ReplicatedClass = robust_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 20))
 
-    
-    local Modules = player.PlayerScripts:WaitForChild("Modules", 10)
-    local ClientItem = robust_require(Modules:WaitForChild("ClientReplicatedClasses", 10):WaitForChild("ClientFighter", 10):WaitForChild("ClientItem", 10))
-    ClientViewModel = robust_require(Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel", 10))
+    local Modules = player.PlayerScripts:WaitForChild("Modules", 15)
+    local ClientItem = robust_require(Modules:WaitForChild("ClientReplicatedClasses", 15):WaitForChild("ClientFighter", 15):WaitForChild("ClientItem", 15))
+    ClientViewModel = robust_require(Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel", 15))
 
-    if not CosmeticLibrary or not ItemLibrary or not ClientViewModel then
-        warn("[!] Skin Changer: One or more critical modules failed to load. Check console for details.")
+    if not CosmeticLibrary or not ItemLibrary or not ClientViewModel or not ReplicatedClass then
+        warn("[!] Skin Changer: Modules failed to load. The UI will not show until libraries are found.")
         return
     end
-
-
 
 local function getCosmeticData(name, cType)
     local base = CosmeticLibrary.Cosmetics[name]
@@ -205,13 +214,14 @@ local function getCosmeticData(name, cType)
         data.BundlePath = "Bundles"
     elseif name:find("Gingerbread") then
         data.BundlePath = "Festive Skin Case"
+    elseif name == "Evil Trident" or name == "Devil's Trident" then
+        data.DisplayName = "Evil Trident"
     end
     return data
 end
 
 local oldGetWrap = ClientViewModel.GetWrap
 ClientViewModel.GetWrap = function(self)
-    -- Fully wrapped so any error falls back to the original GetWrap cleanly
     local ok, result = pcall(function()
         local weaponName = self.ClientItem and self.ClientItem.Name
         if weaponName and _G.EquippedData[weaponName] then
@@ -227,17 +237,12 @@ end
 
 local oldNew = ClientViewModel.new
 ClientViewModel.new = function(replicatedData, clientItem)
-    -- CRITICAL: wrap everything in pcall so that if *any* skin logic errors,
-    -- oldNew still runs and the weapon still loads normally.
-    -- Previously an error here would silently skip oldNew and leave the
-    -- weapon invisible and potentially corrupt the camera state.
     pcall(function()
         if not clientItem then return end
         local weaponName = clientItem.Name
         if not weaponName then return end
         if not _G.EquippedData[weaponName] then return end
 
-        -- ClientFighter may not exist on every weapon type
         local cf = rawget(clientItem, "ClientFighter")
             or (pcall(function() return clientItem.ClientFighter end) and clientItem.ClientFighter)
         if not cf or cf.Player ~= player then return end
@@ -246,8 +251,6 @@ ClientViewModel.new = function(replicatedData, clientItem)
         if not selectedSkin or selectedSkin == "Default" then return end
 
         local cosData = getCosmeticData(selectedSkin, "Skin")
-        -- Only patch replicatedData when we have valid cosmetic data.
-        -- Assigning nil here would corrupt the table and break weapon init.
         if not cosData then return end
 
         local dataKey = ReplicatedClass:ToEnum("Data")
@@ -258,7 +261,6 @@ ClientViewModel.new = function(replicatedData, clientItem)
         replicatedData[dataKey][nameKey] = selectedSkin
     end)
 
-    -- Always call the original regardless of what happened above
     local vm = oldNew(replicatedData, clientItem)
     task.delay(0.1, function()
         pcall(function() if vm and vm._UpdateWrap then vm:_UpdateWrap() end end)
@@ -266,12 +268,6 @@ ClientViewModel.new = function(replicatedData, clientItem)
     return vm
 end
 
--- ═══════════════════════════════════════════════
--- AUTO-INJECT
--- The ClientViewModel.new hook already reads _G.EquippedData every time a tool
--- is equipped, so skins apply automatically on spawn without us needing to do
--- anything extra. ApplyAllSkins is only used for the Load Config button.
--- ═══════════════════════════════════════════════
 local function ApplyAllSkins()
     if not CosmeticLibrary then return end
     for weapon, info in pairs(_G.EquippedData) do
@@ -282,29 +278,20 @@ local function ApplyAllSkins()
     print("[+] Aniha: Skin state synced for " .. player.Name)
 end
 
-
-    -- No CharacterAdded hook needed — the ClientViewModel.new intercept handles it.
-
-
-
 -- ═══════════════════════════════════════════════
 -- GUI
 -- ═══════════════════════════════════════════════
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Name = "AnihaSkinChanger"
--- Do NOT set IgnoreGuiInset=true or ZIndexBehavior that intercepts game input
 
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 950, 0, 660)
 Main.Position = UDim2.new(0.5, -475, 0.5, -330)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 Main.BorderSizePixel = 0
--- Active=false (default) so the frame does NOT sink game mouse input
--- We implement dragging manually below so we don't need Draggable=true
 Main.Active = false
 
--- Title bar
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -314,7 +301,6 @@ Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 22
 Title.BorderSizePixel = 0
 
--- Weapon panel (left)
 local Left = Instance.new("Frame", Main)
 Left.Size = UDim2.new(0, 280, 1, -110)
 Left.Position = UDim2.new(0, 15, 0, 60)
@@ -331,8 +317,7 @@ WeaponSearch.Font = Enum.Font.Gotham
 WeaponSearch.TextSize = 14
 WeaponSearch.BorderSizePixel = 0
 WeaponSearch.ClearTextOnFocus = false
-WeaponSearch.Text = "" -- Explicitly clear to avoid "TextBox" default
-
+WeaponSearch.Text = ""
 
 local WeaponScroll = Instance.new("ScrollingFrame", Left)
 WeaponScroll.Size = UDim2.new(1, -20, 1, -55)
@@ -345,7 +330,6 @@ local WeaponLayout = Instance.new("UIListLayout", WeaponScroll)
 WeaponLayout.Padding = UDim.new(0, 6)
 WeaponLayout.SortOrder = Enum.SortOrder.Name
 
--- Skin panel (right)
 local Right = Instance.new("Frame", Main)
 Right.Size = UDim2.new(1, -310, 1, -110)
 Right.Position = UDim2.new(0, 305, 0, 60)
@@ -372,9 +356,6 @@ local SkinGrid = Instance.new("UIGridLayout", SkinScroll)
 SkinGrid.CellSize = UDim2.new(0, 130, 0, 155)
 SkinGrid.CellPadding = UDim2.new(0, 15, 0, 15)
 
--- ═══════════════════════════════════════════════
--- BOTTOM TOOLBAR (Save / Load / Status)
--- ═══════════════════════════════════════════════
 local Toolbar = Instance.new("Frame", Main)
 Toolbar.Size = UDim2.new(1, 0, 0, 48)
 Toolbar.Position = UDim2.new(0, 0, 1, -48)
@@ -402,7 +383,7 @@ local function MakeToolbarBtn(text, xPos, color)
     btn.TextSize = 14
     btn.BorderSizePixel = 0
     local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0, 4)
     return btn
 end
 
@@ -419,26 +400,19 @@ local function FlashStatus(msg, color)
 end
 
 SaveBtn.MouseButton1Click:Connect(function()
-    if SaveConfig() then
-        FlashStatus("✅ Config saved to AnihaSkinConfig.json!", Color3.fromRGB(100, 220, 100))
-    else
-        FlashStatus("❌ Save failed (writefile not available)", Color3.fromRGB(220, 80, 80))
-    end
+    pcall(function()
+        if SaveConfig() then FlashStatus("✅ Config saved!", Color3.fromRGB(100, 220, 100))
+        else FlashStatus("❌ Save failed!", Color3.fromRGB(220, 80, 80)) end
+    end)
 end)
 
 LoadBtn.MouseButton1Click:Connect(function()
-    if LoadConfig() then
-        FlashStatus("✅ Config loaded! Skins will apply next spawn.", Color3.fromRGB(100, 180, 255))
-        -- Immediately re-apply to current character
-        ApplyAllSkins()
-    else
-        FlashStatus("❌ No config file found or load failed.", Color3.fromRGB(220, 80, 80))
-    end
+    pcall(function()
+        if LoadConfig() then FlashStatus("✅ Config loaded!", Color3.fromRGB(100, 180, 255)) ApplyAllSkins()
+        else FlashStatus("❌ No config found!", Color3.fromRGB(220, 80, 80)) end
+    end)
 end)
 
--- ═══════════════════════════════════════════════
--- THUMBNAIL HELPER
--- ═══════════════════════════════════════════════
 local function GetThumb(name)
     pcall(function()
         if ItemLibrary and ItemLibrary.ViewModels and ItemLibrary.ViewModels[name] then
@@ -457,34 +431,16 @@ local function GetThumb(name)
                 end
             end
         end
-        if ItemLibrary and ItemLibrary.ViewModels and ItemLibrary.ViewModels.Bundles then
-            local bundle = ItemLibrary.ViewModels.Bundles
-            if bundle[name] then
-                local data = bundle[name]
-                if data.ImageHighResolution then return data.ImageHighResolution end
-                if data.Image then return data.Image end
-                if data.Thumbnail then return data.Thumbnail end
-            end
-        end
     end)
     return ""
 end
 
-
--- ═══════════════════════════════════════════════
--- EQUIP SKIN
--- ═══════════════════════════════════════════════
 local function EquipSkin(weapon, skin)
     _G.EquippedData[weapon].Skin = skin
-    -- Update the cosmetic library state so next time the tool spawns it picks up the skin.
-    -- We do NOT re-parent the tool here — that causes camera lock + vanishing weapons.
     pcall(function() CosmeticLibrary.Equip(weapon, "Skin", skin) end)
     SelectedLabel.Text = "✅ EQUIPPED: " .. weapon .. " — " .. skin
 end
 
--- ═══════════════════════════════════════════════
--- WEAPON BUTTONS
--- ═══════════════════════════════════════════════
 local function MakeWeaponBtn(weapon)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 52)
@@ -503,7 +459,6 @@ local function MakeWeaponBtn(weapon)
     img.BackgroundTransparency = 1
     img.Image = GetThumb(weapon)
 
-    -- Active skin badge
     local badge = Instance.new("TextLabel", btn)
     badge.Size = UDim2.new(0, 60, 0, 18)
     badge.Position = UDim2.new(1, -120, 0, 4)
@@ -537,10 +492,7 @@ local function MakeWeaponBtn(weapon)
         SelectedLabel.Text = weapon .. " — Choose a Skin"
         for _, skin in ipairs(SkinLists[weapon]) do
             local sbtn = Instance.new("ImageButton")
-            sbtn.BackgroundColor3 =
-                (_G.EquippedData[weapon] and _G.EquippedData[weapon].Skin == skin)
-                and Color3.fromRGB(60, 130, 60)
-                or Color3.fromRGB(35, 35, 42)
+            sbtn.BackgroundColor3 = (_G.EquippedData[weapon] and _G.EquippedData[weapon].Skin == skin) and Color3.fromRGB(60, 130, 60) or Color3.fromRGB(35, 35, 42)
             sbtn.Image = GetThumb(skin)
             sbtn.BorderSizePixel = 0
             sbtn.Parent = SkinScroll
@@ -555,7 +507,6 @@ local function MakeWeaponBtn(weapon)
             lbl.TextScaled = true
             lbl.BorderSizePixel = 0
             sbtn.MouseButton1Click:Connect(function()
-                -- deselect all cards
                 for _, c in pairs(SkinScroll:GetChildren()) do
                     if c:IsA("ImageButton") then c.BackgroundColor3 = Color3.fromRGB(35, 35, 42) end
                 end
@@ -573,9 +524,6 @@ for weapon in pairs(SkinLists) do
 end
 WeaponScroll.CanvasSize = UDim2.new(0, 0, 0, WeaponLayout.AbsoluteContentSize.Y)
 
--- ═══════════════════════════════════════════════
--- SEARCH
--- ═══════════════════════════════════════════════
 WeaponSearch:GetPropertyChangedSignal("Text"):Connect(function()
     local txt = WeaponSearch.Text:lower()
     for _, btn in pairs(WeaponScroll:GetChildren()) do
@@ -584,16 +532,12 @@ WeaponSearch:GetPropertyChangedSignal("Text"):Connect(function()
             btn.Visible = txt == "" or btnText:find(txt)
         end
     end
-    WeaponScroll.CanvasSize = UDim2.new(0, 0, 0, WeaponLayout.AbsoluteContentSize.Y)
 end)
 
--- ═══════════════════════════════════════════════
--- MANUAL DRAG (replaces Draggable=true which can steal mouse lock)
--- ═══════════════════════════════════════════════
 do
     local dragging, dragStart, startPos
-    local TitleBar = Title -- drag via the title bar
-    TitleBar.Active = true  -- only the title bar is active/interactive
+    local TitleBar = Title
+    TitleBar.Active = true
 
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -603,33 +547,22 @@ do
         end
     end)
     TitleBar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
-            Main.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
+            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
 end
 
--- ═══════════════════════════════════════════════
--- TOGGLE KEY  [K]
--- ═══════════════════════════════════════════════
 UserInputService.InputBegan:Connect(function(i, g)
     if not g and i.KeyCode == Enum.KeyCode.K then
         Main.Visible = not Main.Visible
         if not Main.Visible then
             pcall(function() WeaponSearch:ReleaseFocus() end)
-            -- Force mouse back to default so the game camera can reclaim it
-            pcall(function()
-                UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-            end)
+            pcall(function() UserInputService.MouseBehavior = Enum.MouseBehavior.Default end)
         end
     end
 end)
