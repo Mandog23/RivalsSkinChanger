@@ -110,22 +110,46 @@ print("[+] Initializing Aniha Skin Changer...")
 -- COSMETIC HOOKS & ROBUST INITIALIZATION
 -- ═══════════════════════════════════════════════
 local function robust_require(module)
-    local success, result = pcall(require, module)
-    if success then return result end
+    local setidentity = setthreadidentity or set_thread_identity or (syn and syn.set_thread_identity) or (fluxus and fluxus.set_thread_identity)
+    local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.get_thread_identity)
     
-    -- Try getgenv/getrenv bypasses if standard require fails (Executor context issue)
-    if getgenv and getgenv().require then
-        local ok, res = pcall(getgenv().require, module)
-        if ok then return res end
+    local old_identity
+    pcall(function()
+        if getidentity and setidentity then
+            old_identity = getidentity()
+            setidentity(2) -- Identity 2 is typical for LocalScripts (allows requiring game modules)
+        end
+    end)
+    
+    local success, result = pcall(require, module)
+    
+    -- Attempt fallback to getgenv/getrenv if standard require fails
+    if not success then
+        if getgenv and getgenv().require then
+            local ok, res = pcall(getgenv().require, module)
+            if ok then success, result = true, res end
+        end
     end
-    if getrenv and getrenv().require then
-        local ok, res = pcall(getrenv().require, module)
-        if ok then return res end
+    if not success then
+        if getrenv and getrenv().require then
+            local ok, res = pcall(getrenv().require, module)
+            if ok then success, result = true, res end
+        end
     end
+    
+    -- Restore original identity
+    pcall(function()
+        if setidentity and old_identity then
+            setidentity(old_identity)
+        end
+    end)
+    
+    if success then return result end
     
     warn("[!] Skin Changer: Failed to require module: " .. tostring(module))
     return nil
 end
+
 
 task.spawn(function()
     task.wait(1) -- Give executor a moment to initialize hooks
