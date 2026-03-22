@@ -107,15 +107,40 @@ LoadConfig()
 print("[+] Initializing Aniha Skin Changer...")
 
 -- ═══════════════════════════════════════════════
--- COSMETIC HOOKS
+-- COSMETIC HOOKS & ROBUST INITIALIZATION
 -- ═══════════════════════════════════════════════
-local CosmeticLibrary = require(ReplicatedStorage:WaitForChild("Modules", 5):WaitForChild("CosmeticLibrary", 5))
-local ItemLibrary = require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 5))
-local ReplicatedClass = require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 5))
+local function robust_require(module)
+    local success, result = pcall(require, module)
+    if success then return result end
+    
+    -- Try getgenv/getrenv bypasses if standard require fails (Executor context issue)
+    if getgenv and getgenv().require then
+        local ok, res = pcall(getgenv().require, module)
+        if ok then return res end
+    end
+    if getrenv and getrenv().require then
+        local ok, res = pcall(getrenv().require, module)
+        if ok then return res end
+    end
+    
+    warn("[!] Skin Changer: Failed to require module: " .. tostring(module))
+    return nil
+end
 
-local Modules = player.PlayerScripts:WaitForChild("Modules", 5)
-local ClientItem = require(Modules:WaitForChild("ClientReplicatedClasses", 5):WaitForChild("ClientFighter", 5):WaitForChild("ClientItem", 5))
-local ClientViewModel = require(Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel", 5))
+task.spawn(function()
+    local CosmeticLibrary = robust_require(ReplicatedStorage:WaitForChild("Modules", 10):WaitForChild("CosmeticLibrary", 10))
+    local ItemLibrary = robust_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 10))
+    local ReplicatedClass = robust_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 10))
+    
+    local Modules = player.PlayerScripts:WaitForChild("Modules", 10)
+    local ClientItem = robust_require(Modules:WaitForChild("ClientReplicatedClasses", 10):WaitForChild("ClientFighter", 10):WaitForChild("ClientItem", 10))
+    local ClientViewModel = robust_require(Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel", 10))
+
+    if not CosmeticLibrary or not ItemLibrary or not ClientViewModel then
+        warn("[!] Skin Changer: One or more critical modules failed to load. Check console for details.")
+        return
+    end
+
 
 local function getCosmeticData(name, cType)
     local base = CosmeticLibrary.Cosmetics[name]
@@ -204,7 +229,9 @@ local function ApplyAllSkins()
     print("[+] Aniha: Skin state synced for " .. player.Name)
 end
 
--- No CharacterAdded hook needed — the ClientViewModel.new intercept handles it.
+    -- No CharacterAdded hook needed — the ClientViewModel.new intercept handles it.
+end)
+
 
 -- ═══════════════════════════════════════════════
 -- GUI
