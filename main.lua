@@ -110,16 +110,16 @@ print("[+] Initializing Aniha Skin Changer...")
 -- COSMETIC HOOKS & ROBUST INITIALIZATION
 -- ═══════════════════════════════════════════════
 local function robust_require(module)
+    local mName = tostring(module)
     local setidentity = setthreadidentity or set_thread_identity or (syn and syn.set_thread_identity) or (fluxus and fluxus.set_thread_identity) or (getgenv and getgenv().set_thread_identity)
     local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.get_thread_identity) or (getgenv and getgenv().get_thread_identity)
     
-    -- Try global table fallback FIRST (fastest, no requirement needed)
-    local mName = tostring(module)
+    -- Tier 1: Global Table Check (shared/_G)
     if shared[mName] then return shared[mName] end
     if _G[mName] then return _G[mName] end
     if getrenv and getrenv()._G[mName] then return getrenv()._G[mName] end
-    if getrenv and getrenv().shared[mName] then return getrenv().shared[mName] end
 
+    -- Tier 2: Identity Bypass Require
     local old_identity
     pcall(function()
         if getidentity and setidentity then
@@ -134,35 +134,42 @@ local function robust_require(module)
         local ok, res = pcall(getgenv().require, module)
         if ok then success, result = true, res end
     end
-    if not success and getrenv and getrenv().require then
-        local ok, res = pcall(getrenv().require, module)
-        if ok then success, result = true, res end
-    end
+
+    pcall(function()
+        if setidentity and old_identity then setidentity(old_identity) end
+    end)
     
-    -- If all requires fail, try searching loaded modules
-    if not success and getloadedmodules then
-        for _, m in pairs(getloadedmodules()) do
-            if m == module then
-                pcall(function()
-                    -- Most executors' getloadedmodules return values are already the return value
-                    if type(m) == "table" or type(m) == "function" then
-                        success, result = true, m
+    if success then return result end
+
+    -- Tier 3: Global Garbage Collection Scan (Nuclear Option)
+    -- If require is blocked, we find the table already loaded in the game's memory.
+    local scan_apis = {getgc, getregistry, debug.getregistry}
+    for _, api in pairs(scan_apis) do
+        if type(api) == "function" then
+            local ok, objects = pcall(api, true)
+            if ok and type(objects) == "table" then
+                for _, v in pairs(objects) do
+                    if type(v) == "table" then
+                        if mName:find("CosmeticLibrary") and rawget(v, "Cosmetics") and rawget(v, "Equip") then
+                            print("[*] Aniha: Located CosmeticLibrary via memory scan.")
+                            return v
+                        elseif mName:find("ItemLibrary") and rawget(v, "ViewModels") then
+                            print("[*] Aniha: Located ItemLibrary via memory scan.")
+                            return v
+                        elseif mName:find("ClientViewModel") and type(rawget(v, "new")) == "function" and type(rawget(v, "GetWrap")) == "function" then
+                            print("[*] Aniha: Located ClientViewModel via memory scan.")
+                            return v
+                        end
                     end
-                end)
+                end
             end
         end
     end
 
-    pcall(function()
-        if setidentity and old_identity then
-            setidentity(old_identity)
-        end
-    end)
-    
-    if success then return result end
-    warn("[!] Skin Changer: Failed to require module: " .. tostring(module))
+    warn("[!] Skin Changer: All retrieval methods failed for " .. mName)
     return nil
 end
+
 
 
 
