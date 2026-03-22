@@ -14,7 +14,7 @@ local SkinLists = {
     ["Crossbow"] = {"Default", "Pixel Crossbow", "Harpoon Crossbow", "Violin Crossbow", "Crossbone", "Frostbite Crossbow", "Arch Crossbow", "Glorious Crossbow"},
     ["Distortion"] = {"Default", "Plasma Distortion", "Magma Distortion", "Cyber Distortion", "Expirement D15", "Sleighstortion"},
     ["Energy Rifle"] = {"Default", "Hacker Rifle", "Hydro Rifle", "Void Rifle", "Soul Rifle", "New Years Energy Rifle"},
-    ["Flamethrower"] = {"Default", "Pixel Flamethrower", "Lamethrower", "Glitterthrower", "Jack O' Thrower", "Snowblower", "Keythrower"},
+    ["Flamethrower"] = {"Default", "Pixel Flamethrower", "Lamethrower", "Glitterthrower", "Jack O' Thrower", "Snowblower", "Keythrower", "Rainbowthrower"},
     ["Grenade Launcher"] = {"Default", "Swashbuckler", "Uranium Launcher", "Gearnade Launcher", "Skull Grenade Launcher", "Snowball Launcher"},
     ["Gunblade"] = {"Default", "Hyper Gunblade", "Crude Gunblade", "Gunsaw", "Boneblade", "Elf's Gunblade"},
     ["Minigun"] = {"Default", "Lasergun 3000", "Pixel Minigun", "Fighter Jet", "Pumpkin Minigun", "Wrapped Minigun"},
@@ -22,14 +22,14 @@ local SkinLists = {
     ["RPG"] = {"Default", "Nuke Launcher", "Spaceship Launcher", "Squid Launcher", "Pumpkin Launcher", "Firework Launcher"},
     ["Shotgun"] = {"Default", "Balloon Shotgun", "Hyper Shotgun", "Cactus Shotgun", "Broomstick", "Wrapped Shotgun"},
     ["Sniper"] = {"Default", "Pixel Sniper", "Hyper Sniper", "Event Horizon", "Eyething Sniper", "Gingerbread Sniper", "Keyper", "Glorious Sniper"},
-    ["Daggers"] = {"Default", "Aces", "Paper Planes", "Shurikens", "Bat Daggers", "Cookies", "Crystal Daggers"},
+    ["Daggers"] = {"Default", "Aces", "Paper Planes", "Shurikens", "Bat Daggers", "Cookies", "Crystal Daggers", "Keynais"},
     ["Energy Pistols"] = {"Default", "Void Pistols", "Hydro Pistols", "Soul Pistols", "New Years Energy Pistols"},
     ["Exogun"] = {"Default", "Singularity", "Raygun", "Repulsor", "Exogourd", "Midnight Festive Exogun"},
     ["Flare Gun"] = {"Default", "Firework Gun", "Dynamite Gun", "Banana Flare", "Vexed Flare Gun", "Wrapped Flare Gun"},
     ["Handgun"] = {"Default", "Blaster", "Hand Gun", "Gumball Handgun", "Pumpkin Handgun", "Gingerbread Handgun"},
     ["Revolver"] = {"Default", "Desert Eagle", "Sheriff", "Peppergun", "Boneclaw Revolver", "Peppermint Sheriff"},
     ["Shorty"] = {"Default", "Not So Shorty", "Lovely Shorty", "Balloon Shorty", "Demon Shorty", "Wrapped Shorty"},
-    ["Slingshot"] = {"Default", "Stick", "Goal Post", "Harp", "Boneshot", "Reindeer Slingshot"},
+    ["Slingshot"] = {"Default", "Stick", "Goal Post", "Harp", "Boneshot", "Reindeer Slingshot", "Lucky Horseshoe"},
     ["Spray"] = {"Default", "Lovely Spray", "Nail Gun", "Bottle Spray", "Boneclaw Spray", "Pine Spray", "Key Spray"},
     ["Uzi"] = {"Default", "Water Uzi", "Electro Uzi", "Money Gun", "Demon Uzi", "Pine Uzi"},
     ["Warper"] = {"Default", "Glitter Warper", "Arcane Warper", "Hotel Bell", "Experiment W4", "Frost Warper"},
@@ -37,7 +37,7 @@ local SkinLists = {
     ["Chainsaw"] = {"Default", "Blobsaw", "Handsaws", "Mega Drill", "Buzzsaw", "Festive Buzzsaw"},
     ["Fists"] = {"Default", "Boxing Gloves", "Brass Knuckles", "Fists Of Hurt", "Pumpkin Claws", "Festive Fists"},
     ["Katana"] = {"Default", "Saber", "Lightning Bolt", "Stellar Katana", "Devil's Trident", "New Years Katana", "Keytana", "Arch Katana", "Crystal Katana", "Pixel Katana", "Glorious Katana"},
-    ["Knife"] = {"Default", "Chancla", "Karambit", "Balisong", "Machete", "Candy Cane", "Keylisong", "Keyrambit"},
+    ["Knife"] = {"Default", "Chancla", "Karambit", "Balisong", "Machete", "Candy Cane", "Keylisong", "Keyrambit", "Caladbolg"},
     ["Riot Shield"] = {"Default", "Door", "Energy Shield", "Masterpiece", "Tombstone Shield", "Sled"},
     ["Scythe"] = {"Default", "Scythe of Death", "Anchor", "Sakura Scythe", "Bat Scythe", "Cryo Scythe", "Crystal Scythe", "Keythe", "Bug Net"},
     ["Trowel"] = {"Default", "Plastic Shovel", "Garden Shovel", "Paintbrush", "Pumpkin Carver", "Snow Shovel"},
@@ -46,10 +46,10 @@ local SkinLists = {
     ["Grenade"] = {"Default", "Whoopee Cushion", "Water Balloon", "Dynamite", "Soul Grenade", "Jingle Grenade"},
     ["Jump Pad"] = {"Default", "Trampoline", "Bounce House", "Shady Chicken Sandwich", "Spider Web", "Jolly Man"},
     ["Medkit"] = {"Default", "Sandwich", "Laptop", "Medkitty", "Bucket of Candy", "Milk & Cookies", "Box of Chocolates", "Briefcase"},
-    ["Molotov"] = {"Default", "Coffee", "Torch", "Lava Lamp", "Vexed Candle", "Hot Coals"},
+    ["Molotov"] = {"Default", "Coffee", "Torch", "Lava Lamp", "Vexed Candle", "Hot Coals", "Arch Molotov"},
     ["Satchel"] = {"Default", "Advanced Satchel", "Notebook Satchel", "Bag O' Money", "Potion Satchel", "Suspicious Gift"},
     ["Smoke Grenade"] = {"Default", "Emoji Cloud", "Balance", "Hourglass", "Eyeball", "Snowglobe"},
-    ["Subspace Tripmine"] = {"Default", "Don't Press", "Spring", "DIY Tripmine", "Trick or Treat", "Dev In the Box"},
+    ["Subspace Tripmine"] = {"Default", "Don't Press", "Spring", "DIY Tripmine", "Trick or Treat", "Dev In the Box", "Pot O Keys"},
     ["War Horn"] = {"Default", "Trumpet", "Megaphone", "Air Horn", "Boneclaw Horn", "Mammoth Horn"},
     ["Warpstone"] = {"Default", "Cyber Warpstone", "Teleport Disc", "Electropunk Warpstone", "Warpbone", "Warpstar"},
     ["Permafrost"] = {"Default", "Snowman Permafrost", "Ice Permafrost", "Glorious Permafrost"},
@@ -134,30 +134,58 @@ end
 
 local oldGetWrap = ClientViewModel.GetWrap
 ClientViewModel.GetWrap = function(self)
-    local weaponName = self.ClientItem and self.ClientItem.Name
-    if weaponName and _G.EquippedData[weaponName] then
-        local wrapName = _G.EquippedData[weaponName].Wrap
-        if wrapName ~= "None" then return getCosmeticData(wrapName, "Wrap") end
-    end
+    -- Fully wrapped so any error falls back to the original GetWrap cleanly
+    local ok, result = pcall(function()
+        local weaponName = self.ClientItem and self.ClientItem.Name
+        if weaponName and _G.EquippedData[weaponName] then
+            local wrapName = _G.EquippedData[weaponName].Wrap
+            if wrapName and wrapName ~= "None" then
+                return getCosmeticData(wrapName, "Wrap")
+            end
+        end
+    end)
+    if ok and result then return result end
     return oldGetWrap(self)
 end
 
 local oldNew = ClientViewModel.new
 ClientViewModel.new = function(replicatedData, clientItem)
-    local weaponName = clientItem.Name
-    if _G.EquippedData[weaponName] and clientItem.ClientFighter.Player == player then
+    -- CRITICAL: wrap everything in pcall so that if *any* skin logic errors,
+    -- oldNew still runs and the weapon still loads normally.
+    -- Previously an error here would silently skip oldNew and leave the
+    -- weapon invisible and potentially corrupt the camera state.
+    pcall(function()
+        if not clientItem then return end
+        local weaponName = clientItem.Name
+        if not weaponName then return end
+        if not _G.EquippedData[weaponName] then return end
+
+        -- ClientFighter may not exist on every weapon type
+        local cf = rawget(clientItem, "ClientFighter")
+            or (pcall(function() return clientItem.ClientFighter end) and clientItem.ClientFighter)
+        if not cf or cf.Player ~= player then return end
+
+        local selectedSkin = _G.EquippedData[weaponName].Skin
+        if not selectedSkin or selectedSkin == "Default" then return end
+
+        local cosData = getCosmeticData(selectedSkin, "Skin")
+        -- Only patch replicatedData when we have valid cosmetic data.
+        -- Assigning nil here would corrupt the table and break weapon init.
+        if not cosData then return end
+
         local dataKey = ReplicatedClass:ToEnum("Data")
         local skinKey = ReplicatedClass:ToEnum("Skin")
         local nameKey = ReplicatedClass:ToEnum("Name")
         replicatedData[dataKey] = replicatedData[dataKey] or {}
-        local selectedSkin = _G.EquippedData[weaponName].Skin
-        if selectedSkin ~= "Default" then
-            replicatedData[dataKey][skinKey] = getCosmeticData(selectedSkin, "Skin")
-            replicatedData[dataKey][nameKey] = selectedSkin
-        end
-    end
+        replicatedData[dataKey][skinKey] = cosData
+        replicatedData[dataKey][nameKey] = selectedSkin
+    end)
+
+    -- Always call the original regardless of what happened above
     local vm = oldNew(replicatedData, clientItem)
-    task.delay(0.1, function() if vm and vm._UpdateWrap then vm:_UpdateWrap() end end)
+    task.delay(0.1, function()
+        pcall(function() if vm and vm._UpdateWrap then vm:_UpdateWrap() end end)
+    end)
     return vm
 end
 
@@ -511,9 +539,11 @@ UserInputService.InputBegan:Connect(function(i, g)
     if not g and i.KeyCode == Enum.KeyCode.K then
         Main.Visible = not Main.Visible
         if not Main.Visible then
-            -- Release TextBox focus so it doesn't keep capturing mouse input
-            -- even though the menu is hidden
-            WeaponSearch:ReleaseFocus()
+            pcall(function() WeaponSearch:ReleaseFocus() end)
+            -- Force mouse back to default so the game camera can reclaim it
+            pcall(function()
+                UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+            end)
         end
     end
 end)
