@@ -127,6 +127,80 @@ _G.AnihaVersion = "2.2-GC"
 local function robust_require(module)
     local mName = tostring(module)
     local setidentity = setthreadidentity or set_thread_identity or (syn and syn.set_thread_identity) or (fluxus and fluxus.set_thread_identity) or (getgenv and getgenv().set_thread_identity)
+    local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.set_thread_identity) or (getgenv and getgenv().get_thread_identity)
+    
+    -- Tier 1: Global Table Check (shared/_G)
+    if shared[mName] or _G[mName] then 
+        _G.Telemetry[mName] = "Global Cache Check"
+        return (shared[mName] or _G[mName]) 
+    end
+    if getrenv and (getrenv()._G[mName] or getrenv().shared[mName]) then 
+        _G.Telemetry[mName] = "Shared Environment Scan"
+        return (getrenv()._G[mName] or getrenv().shared[mName]) 
+    end
+
+    -- Tier 2: Identity Bypass Require
+    local old_identity
+    pcall(function() if getidentity and setidentity then old_identity = getidentity() setidentity(2) end end)
+    local success, result = pcall(require, module)
+    if not success and getgenv and getgenv().require then
+        local ok, res = pcall(getgenv().require, module)
+        if ok then success, result = true, res end
+    end
+    pcall(function() if setidentity and old_identity then setidentity(old_identity) end end)
+    if success then 
+        _G.Telemetry[mName] = "Identity Bypass (" .. (getidentity and getidentity() or "ID6") .. ")"
+        return result 
+    end
+
+    -- Tier 3: Memory Signature Scan (getgc / getreg)
+    local getupvalues = debug.getupvalues or getupvalues
+    local scan_apis = {getgc, getregistry, debug.getregistry}
+    for _, api in pairs(scan_apis) do
+        if type(api) == "function" then
+            local ok, objects = pcall(api, true)
+            if ok and type(objects) == "table" then
+                for _, v in pairs(objects) do
+                    if type(v) == "table" then
+                        if mName:find("CosmeticLibrary") and (v.Cosmetics or rawget(v, "Cosmetics")) and (type(v.Equip) == "function" or type(v.GetSkins) == "function") then
+                            _G.Telemetry[mName] = "Heuristic Memory Scan (GC)"
+                            return v
+                        elseif mName:find("ItemLibrary") and (v.ViewModels or rawget(v, "ViewModels")) then
+                            _G.Telemetry[mName] = "Heuristic Memory Scan (GC)"
+                            return v
+                        elseif mName:find("ClientViewModel") and (v.new or rawget(v, "new")) and (v.GetWrap or rawget(v, "GetWrap")) then
+                            _G.Telemetry[mName] = "Heuristic Memory Scan (GC)"
+                            return v
+                        elseif mName:find("ReplicatedClass") and type(v.ToEnum) == "function" then
+                            _G.Telemetry[mName] = "Heuristic Memory Scan (GC)"
+                            return v
+                        end
+                    elseif type(v) == "function" and getupvalues then
+                        local ups = getupvalues(v)
+                        for _, upv in pairs(ups) do
+                            if type(upv) == "table" then
+                                if mName:find("CosmeticLibrary") and upv.Cosmetics and upv.Equip then 
+                                    _G.Telemetry[mName] = "Function Upvalue Scan"
+                                    return upv 
+                                end
+                                if mName:find("ItemLibrary") and upv.ViewModels then 
+                                    _G.Telemetry[mName] = "Function Upvalue Scan"
+                                    return upv 
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    _G.Telemetry[mName] = "NOT_FOUND"
+    warn("[!] Skin Changer: All retrieval methods failed for " .. mName .. ". Your executor may be too restricted.")
+    return nil
+end
+    local mName = tostring(module)
+    local setidentity = setthreadidentity or set_thread_identity or (syn and syn.set_thread_identity) or (fluxus and fluxus.set_thread_identity) or (getgenv and getgenv().set_thread_identity)
     local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.get_thread_identity) or (getgenv and getgenv().get_thread_identity)
     
     -- Tier 1: Global Table Check (shared/_G)
