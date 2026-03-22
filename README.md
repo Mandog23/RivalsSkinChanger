@@ -19,11 +19,14 @@ You can execute this script using any modern Roblox executor (e.g., Synapse X, K
 Simply copy the entire contents of `main.lua` and paste it into your executor, then execute.
 
 ### Option 2: Loadstring
-If you are hosting this repository on GitHub, players can run it using a loadstring. Replace `YOUR_GITHUB_USERNAME` with your actual username:
+If you are hosting this repository on GitHub, players can run it using a loadstring. **IMPORTANT**: Replace `YOUR_GITHUB_USERNAME` in the link below with your actual GitHub username (case-sensitive) for the script to load correctly.
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/RivalsSkinChanger/main/main.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Mandog23/RivalsSkinChanger/main/main.lua"))()
 ```
+
+If you see a `404: Not Found` error, it means the URL above is incorrect or your repository is private.
+
 
 ## How It Works
 The script hooks into Rivals' `CosmeticLibrary` and `ClientItem` ViewModels to force the client to render the selected cosmetic `Skin` and `Wrap` data over your current equipped weapon.
