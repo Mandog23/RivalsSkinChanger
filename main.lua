@@ -104,7 +104,9 @@ end
 
 -- Load saved config on startup
 LoadConfig()
-print("[+] Initializing Aniha Skin Changer...")
+print("[+] Initializing Aniha Skin Changer v2.1 (MEMORY SCAN Edition)...")
+_G.AnihaVersion = "2.1-GC"
+
 
 -- ═══════════════════════════════════════════════
 -- COSMETIC HOOKS & ROBUST INITIALIZATION
@@ -151,16 +153,17 @@ local function robust_require(module)
                 for _, v in pairs(objects) do
                     if type(v) == "table" then
                         if mName:find("CosmeticLibrary") and rawget(v, "Cosmetics") and rawget(v, "Equip") then
-                            print("[*] Aniha: Located CosmeticLibrary via memory scan.")
+                            print("[*] Aniha: Located " .. mName .. " via Scan (Signature: Cosmetics/Equip)")
                             return v
                         elseif mName:find("ItemLibrary") and rawget(v, "ViewModels") then
-                            print("[*] Aniha: Located ItemLibrary via memory scan.")
+                            print("[*] Aniha: Located " .. mName .. " via Scan (Signature: ViewModels)")
                             return v
-                        elseif mName:find("ClientViewModel") and type(rawget(v, "new")) == "function" and type(rawget(v, "GetWrap")) == "function" then
-                            print("[*] Aniha: Located ClientViewModel via memory scan.")
+                        elseif mName:find("ClientViewModel") and rawget(v, "new") and rawget(v, "GetWrap") then
+                            print("[*] Aniha: Located " .. mName .. " via Scan (Signature: new/GetWrap)")
                             return v
                         end
                     end
+
                 end
             end
         end
