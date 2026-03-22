@@ -110,34 +110,49 @@ print("[+] Initializing Aniha Skin Changer...")
 -- COSMETIC HOOKS & ROBUST INITIALIZATION
 -- ═══════════════════════════════════════════════
 local function robust_require(module)
-    local setidentity = setthreadidentity or set_thread_identity or (syn and syn.set_thread_identity) or (fluxus and fluxus.set_thread_identity)
-    local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.get_thread_identity)
+    local setidentity = setthreadidentity or set_thread_identity or (syn and syn.set_thread_identity) or (fluxus and fluxus.set_thread_identity) or (getgenv and getgenv().set_thread_identity)
+    local getidentity = getthreadidentity or get_thread_identity or (syn and syn.get_thread_identity) or (fluxus and fluxus.get_thread_identity) or (getgenv and getgenv().get_thread_identity)
     
+    -- Try global table fallback FIRST (fastest, no requirement needed)
+    local mName = tostring(module)
+    if shared[mName] then return shared[mName] end
+    if _G[mName] then return _G[mName] end
+    if getrenv and getrenv()._G[mName] then return getrenv()._G[mName] end
+    if getrenv and getrenv().shared[mName] then return getrenv().shared[mName] end
+
     local old_identity
     pcall(function()
         if getidentity and setidentity then
             old_identity = getidentity()
-            setidentity(2) -- Identity 2 is typical for LocalScripts (allows requiring game modules)
+            setidentity(2)
         end
     end)
     
     local success, result = pcall(require, module)
     
-    -- Attempt fallback to getgenv/getrenv if standard require fails
-    if not success then
-        if getgenv and getgenv().require then
-            local ok, res = pcall(getgenv().require, module)
-            if ok then success, result = true, res end
-        end
+    if not success and getgenv and getgenv().require then
+        local ok, res = pcall(getgenv().require, module)
+        if ok then success, result = true, res end
     end
-    if not success then
-        if getrenv and getrenv().require then
-            local ok, res = pcall(getrenv().require, module)
-            if ok then success, result = true, res end
-        end
+    if not success and getrenv and getrenv().require then
+        local ok, res = pcall(getrenv().require, module)
+        if ok then success, result = true, res end
     end
     
-    -- Restore original identity
+    -- If all requires fail, try searching loaded modules
+    if not success and getloadedmodules then
+        for _, m in pairs(getloadedmodules()) do
+            if m == module then
+                pcall(function()
+                    -- Most executors' getloadedmodules return values are already the return value
+                    if type(m) == "table" or type(m) == "function" then
+                        success, result = true, m
+                    end
+                end)
+            end
+        end
+    end
+
     pcall(function()
         if setidentity and old_identity then
             setidentity(old_identity)
@@ -145,10 +160,10 @@ local function robust_require(module)
     end)
     
     if success then return result end
-    
     warn("[!] Skin Changer: Failed to require module: " .. tostring(module))
     return nil
 end
+
 
 
 task.spawn(function()
