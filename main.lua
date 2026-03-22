@@ -128,9 +128,11 @@ local function robust_require(module)
 end
 
 task.spawn(function()
-    CosmeticLibrary = robust_require(ReplicatedStorage:WaitForChild("Modules", 10):WaitForChild("CosmeticLibrary", 10))
-    ItemLibrary = robust_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 10))
-    ReplicatedClass = robust_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 10))
+    task.wait(1) -- Give executor a moment to initialize hooks
+    CosmeticLibrary = robust_require(ReplicatedStorage:WaitForChild("Modules", 15):WaitForChild("CosmeticLibrary", 15))
+    ItemLibrary = robust_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 15))
+    ReplicatedClass = robust_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 15))
+
     
     local Modules = player.PlayerScripts:WaitForChild("Modules", 10)
     local ClientItem = robust_require(Modules:WaitForChild("ClientReplicatedClasses", 10):WaitForChild("ClientFighter", 10):WaitForChild("ClientItem", 10))
@@ -222,6 +224,7 @@ end
 -- anything extra. ApplyAllSkins is only used for the Load Config button.
 -- ═══════════════════════════════════════════════
 local function ApplyAllSkins()
+    if not CosmeticLibrary then return end
     for weapon, info in pairs(_G.EquippedData) do
         if info.Skin ~= "Default" then
             pcall(function() CosmeticLibrary.Equip(weapon, "Skin", info.Skin) end)
@@ -229,6 +232,7 @@ local function ApplyAllSkins()
     end
     print("[+] Aniha: Skin state synced for " .. player.Name)
 end
+
 
     -- No CharacterAdded hook needed — the ClientViewModel.new intercept handles it.
 
@@ -278,6 +282,8 @@ WeaponSearch.Font = Enum.Font.Gotham
 WeaponSearch.TextSize = 14
 WeaponSearch.BorderSizePixel = 0
 WeaponSearch.ClearTextOnFocus = false
+WeaponSearch.Text = "" -- Explicitly clear to avoid "TextBox" default
+
 
 local WeaponScroll = Instance.new("ScrollingFrame", Left)
 WeaponScroll.Size = UDim2.new(1, -20, 1, -55)
@@ -385,33 +391,36 @@ end)
 -- THUMBNAIL HELPER
 -- ═══════════════════════════════════════════════
 local function GetThumb(name)
-    if ItemLibrary.ViewModels and ItemLibrary.ViewModels[name] then
-        local data = ItemLibrary.ViewModels[name]
-        if data.ImageHighResolution then return data.ImageHighResolution end
-        if data.Image then return data.Image end
-        if data.Thumbnail then return data.Thumbnail end
-    end
-    if CosmeticLibrary and CosmeticLibrary.Skins then
-        for _, tbl in pairs(CosmeticLibrary.Skins) do
-            if tbl[name] then
-                local data = tbl[name]
+    pcall(function()
+        if ItemLibrary and ItemLibrary.ViewModels and ItemLibrary.ViewModels[name] then
+            local data = ItemLibrary.ViewModels[name]
+            if data.ImageHighResolution then return data.ImageHighResolution end
+            if data.Image then return data.Image end
+            if data.Thumbnail then return data.Thumbnail end
+        end
+        if CosmeticLibrary and CosmeticLibrary.Skins then
+            for _, tbl in pairs(CosmeticLibrary.Skins) do
+                if tbl[name] then
+                    local data = tbl[name]
+                    if data.ImageHighResolution then return data.ImageHighResolution end
+                    if data.Image then return data.Image end
+                    if data.Thumbnail then return data.Thumbnail end
+                end
+            end
+        end
+        if ItemLibrary and ItemLibrary.ViewModels and ItemLibrary.ViewModels.Bundles then
+            local bundle = ItemLibrary.ViewModels.Bundles
+            if bundle[name] then
+                local data = bundle[name]
                 if data.ImageHighResolution then return data.ImageHighResolution end
                 if data.Image then return data.Image end
                 if data.Thumbnail then return data.Thumbnail end
             end
         end
-    end
-    if ItemLibrary.ViewModels and ItemLibrary.ViewModels.Bundles then
-        local bundle = ItemLibrary.ViewModels.Bundles
-        if bundle[name] then
-            local data = bundle[name]
-            if data.ImageHighResolution then return data.ImageHighResolution end
-            if data.Image then return data.Image end
-            if data.Thumbnail then return data.Thumbnail end
-        end
-    end
+    end)
     return ""
 end
+
 
 -- ═══════════════════════════════════════════════
 -- EQUIP SKIN
