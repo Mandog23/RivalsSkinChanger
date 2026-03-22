@@ -128,18 +128,19 @@ local function robust_require(module)
 end
 
 task.spawn(function()
-    local CosmeticLibrary = robust_require(ReplicatedStorage:WaitForChild("Modules", 10):WaitForChild("CosmeticLibrary", 10))
-    local ItemLibrary = robust_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 10))
-    local ReplicatedClass = robust_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 10))
+    CosmeticLibrary = robust_require(ReplicatedStorage:WaitForChild("Modules", 10):WaitForChild("CosmeticLibrary", 10))
+    ItemLibrary = robust_require(ReplicatedStorage.Modules:WaitForChild("ItemLibrary", 10))
+    ReplicatedClass = robust_require(ReplicatedStorage.Modules:WaitForChild("ReplicatedClass", 10))
     
     local Modules = player.PlayerScripts:WaitForChild("Modules", 10)
     local ClientItem = robust_require(Modules:WaitForChild("ClientReplicatedClasses", 10):WaitForChild("ClientFighter", 10):WaitForChild("ClientItem", 10))
-    local ClientViewModel = robust_require(Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel", 10))
+    ClientViewModel = robust_require(Modules.ClientReplicatedClasses.ClientFighter.ClientItem:WaitForChild("ClientViewModel", 10))
 
     if not CosmeticLibrary or not ItemLibrary or not ClientViewModel then
         warn("[!] Skin Changer: One or more critical modules failed to load. Check console for details.")
         return
     end
+
 
 
 local function getCosmeticData(name, cType)
@@ -230,7 +231,7 @@ local function ApplyAllSkins()
 end
 
     -- No CharacterAdded hook needed — the ClientViewModel.new intercept handles it.
-end)
+
 
 
 -- ═══════════════════════════════════════════════
@@ -576,3 +577,4 @@ UserInputService.InputBegan:Connect(function(i, g)
 end)
 
 print("[+] Aniha Skin Changer loaded. Press K to toggle. Drag via title bar.")
+end)
