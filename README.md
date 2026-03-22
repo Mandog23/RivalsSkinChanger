@@ -22,7 +22,7 @@ Simply copy the entire contents of `main.lua` and paste it into your executor, t
 If you are hosting this repository on GitHub, players can run it using a loadstring. Replace `YOUR_GITHUB_USERNAME` with your actual username:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Mandog23/RivalsSkinChanger/main/main.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/RivalsSkinChanger/main/main.lua"))()
 ```
 
 ## How It Works
@@ -31,4 +31,3 @@ The script hooks into Rivals' `CosmeticLibrary` and `ClientItem` ViewModels to f
 ***
 
 *Disclaimer: This script is for educational purposes. Use at your own risk.*
-
