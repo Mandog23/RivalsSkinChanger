@@ -3,7 +3,7 @@
 A client-side skin changer script for the Roblox game **Rivals**. It features a custom user interface that allows you to easily browse all weapons and apply any skin or wrap locally to your character.
 
 ### Join Our Discord!
-[Discord Server](https://discord.gg/PKBB5QpmPs) NOT UD JOIN DC
+[Discord Server](https://discord.gg/HS6D7HYDKH) NOT UD JOIN DC
 
 ## Features
 - **All Weapons Supported:** Automatically fetches and categorizes skins for Assault Rifles, Snipers, Melees, and more.
